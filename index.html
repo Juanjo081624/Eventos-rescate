@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0b4f8a">
+  <meta name="description" content="Gestión de eventos operativos de Rescate CUA">
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" href="icons/icon-192.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="styles.css">
+  <title>Eventos Rescate CUA</title>
+</head>
+<body>
+  <div id="toast" class="toast" aria-live="polite"></div>
+
+  <div id="sessionModal" class="modal open" role="dialog" aria-modal="true">
+    <div class="modal-card small">
+      <h2>Inicio de sesión de trabajo</h2>
+      <p>Ingresa tu nombre completo. Quedará asociado a las acciones realizadas durante esta sesión.</p>
+      <label>Nombre completo<input id="sessionUser" autocomplete="name" maxlength="100" placeholder="Ej.: Juan José Figueroa"></label>
+      <button id="startSessionBtn" class="btn primary full">Comenzar</button>
+    </div>
+  </div>
+
+  <aside class="sidebar" id="sidebar">
+    <div class="brand">
+      <div class="brand-mark">RC</div>
+      <div><strong>Rescate CUA</strong><span>Gestión de eventos</span></div>
+    </div>
+    <nav>
+      <button class="nav-btn active" data-view="dashboard">Dashboard</button>
+      <button class="nav-btn" data-view="calendar">Calendario</button>
+      <button class="nav-btn" data-view="events">Eventos</button>
+      <button class="nav-btn" data-view="reports">Informes</button>
+      <button class="nav-btn" data-view="trash">Papelera</button>
+    </nav>
+    <div class="sidebar-footer">
+      <small>Usuario activo</small>
+      <strong id="activeUser">Sin identificar</strong>
+      <button id="changeUserBtn" class="btn ghost full">Cambiar usuario</button>
+    </div>
+  </aside>
+
+  <main class="main">
+    <header class="topbar">
+      <button id="menuBtn" class="icon-btn mobile-only" aria-label="Abrir menú">☰</button>
+      <div><h1 id="pageTitle">Dashboard</h1><p id="pageSubtitle">Resumen operativo del mes actual</p></div>
+      <div class="top-actions"><button id="installBtn" class="btn ghost hidden">Instalar app</button><button id="newEventBtn" class="btn primary">+ Nuevo evento</button></div>
+    </header>
+
+    <section id="dashboardView" class="view active">
+      <div class="toolbar"><button id="dashPrev" class="icon-btn">‹</button><h2 id="dashMonth"></h2><button id="dashNext" class="icon-btn">›</button></div>
+      <div id="metricCards" class="cards-grid"></div>
+      <div class="content-grid two">
+        <article class="panel"><div class="panel-head"><h3>Próximos eventos</h3></div><div id="upcomingList" class="list"></div></article>
+        <article class="panel"><div class="panel-head"><h3>Alertas y conflictos</h3></div><div id="alertsList" class="list"></div></article>
+      </div>
+      <div class="content-grid two">
+        <article class="panel"><div class="panel-head"><h3>Participación por funcionario</h3></div><div id="staffRanking" class="list"></div></article>
+        <article class="panel"><div class="panel-head"><h3>Eventos por tipo</h3></div><div id="typeSummary" class="list"></div></article>
+      </div>
+    </section>
+
+    <section id="calendarView" class="view">
+      <div class="toolbar"><button id="calPrev" class="icon-btn">‹</button><h2 id="calMonth"></h2><button id="calNext" class="icon-btn">›</button></div>
+      <div id="calendarGrid" class="calendar"></div>
+    </section>
+
+    <section id="eventsView" class="view">
+      <article class="panel filters-panel">
+        <div class="filters-grid">
+          <label>Texto libre<input id="fText" placeholder="Nombre, lugar, persona..."></label>
+          <label>Desde<input id="fStart" type="date"></label>
+          <label>Hasta<input id="fEnd" type="date"></label>
+          <label>Tipo<select id="fType"><option value="">Todos</option><option>Deportivo</option><option>Académico</option><option>Otro</option></select></label>
+          <label>Estado<select id="fStatus"><option value="">Todos</option><option>Programado</option><option>Confirmado</option><option>En curso</option><option>Finalizado</option><option>Cancelado</option></select></label>
+          <label>Cargo<select id="fRole"><option value="">Todos</option><option>Enfermero/a</option><option>TENS</option><option>Conductor/a</option><option>Médico/a</option><option>Otro</option></select></label>
+          <label>Móvil<select id="fVehicle"><option value="">Todos</option><option>M2</option><option>M4</option><option>M5</option><option>VIR</option><option>Otro</option></select></label>
+        </div>
+        <button id="clearFiltersBtn" class="btn ghost">Limpiar filtros</button>
+      </article>
+      <article class="panel table-wrap"><table><thead><tr><th>Evento</th><th>Fecha</th><th>Lugar</th><th>Estado</th><th>Equipo</th><th>Móvil</th><th>Duración</th><th>Acciones</th></tr></thead><tbody id="eventsTableBody"></tbody></table></article>
+    </section>
+
+    <section id="reportsView" class="view">
+      <article class="panel">
+        <h3>Filtros del informe</h3>
+        <div class="filters-grid">
+          <label>Fecha inicial<input id="rStart" type="date"></label>
+          <label>Fecha final<input id="rEnd" type="date"></label>
+          <label>Tipo<select id="rType"><option value="">Todos</option><option>Deportivo</option><option>Académico</option><option>Otro</option></select></label>
+          <label>Estado<select id="rStatus"><option value="">Todos</option><option>Programado</option><option>Confirmado</option><option>En curso</option><option>Finalizado</option><option>Cancelado</option></select></label>
+          <label>Funcionario<input id="rStaff"></label>
+          <label>Cargo<select id="rRole"><option value="">Todos</option><option>Enfermero/a</option><option>TENS</option><option>Conductor/a</option><option>Médico/a</option><option>Otro</option></select></label>
+          <label>Móvil<select id="rVehicle"><option value="">Todos</option><option>M2</option><option>M4</option><option>M5</option><option>VIR</option><option>Otro</option></select></label>
+        </div>
+        <div class="button-row"><button id="previewReportBtn" class="btn primary">Vista previa</button><button id="exportReportPdfBtn" class="btn ghost">PDF</button><button id="exportReportExcelBtn" class="btn ghost">Excel</button><button id="exportReportCsvBtn" class="btn ghost">CSV</button><button id="backupBtn" class="btn ghost">Respaldo JSON</button><label class="btn ghost file-label">Importar JSON<input id="importInput" type="file" accept="application/json" hidden></label></div>
+      </article>
+      <article id="reportPreview" class="panel report-preview"><p class="muted">Configura los filtros y genera una vista previa.</p></article>
+    </section>
+
+    <section id="trashView" class="view">
+      <article class="panel table-wrap"><table><thead><tr><th>Evento</th><th>Eliminado</th><th>Usuario</th><th>Motivo</th><th>Acciones</th></tr></thead><tbody id="trashTableBody"></tbody></table></article>
+    </section>
+  </main>
+
+  <div id="eventModal" class="modal" role="dialog" aria-modal="true">
+    <div class="modal-card large">
+      <div class="modal-head"><h2 id="eventModalTitle">Nuevo evento</h2><button class="icon-btn close-modal">×</button></div>
+      <form id="eventForm">
+        <input id="eventId" type="hidden">
+        <div class="form-section"><h3>Identificación</h3><div class="form-grid">
+          <label class="span-2">Nombre del evento *<input id="eventName" required maxlength="150"></label>
+          <label>Tipo *<select id="eventType" required><option value="">Seleccionar</option><option>Deportivo</option><option>Académico</option><option>Otro</option></select></label>
+          <label id="otherTypeWrap" class="hidden">Especifique tipo *<input id="otherType" maxlength="100"></label>
+          <label class="span-2">Lugar *<input id="eventLocation" required maxlength="200"></label>
+          <label>Fecha de inicio *<input id="startDate" type="date" required></label>
+          <label>Fecha de término *<input id="endDate" type="date" required></label>
+          <label>Estado *<select id="eventStatus" required><option>Programado</option><option>Confirmado</option><option>En curso</option><option>Finalizado</option><option>Cancelado</option></select></label>
+          <label id="cancelReasonWrap" class="span-2 hidden">Motivo de cancelación *<textarea id="cancelReason"></textarea></label>
+        </div></div>
+        <div class="form-section"><h3>Horarios</h3><div class="form-grid five">
+          <label>Presentación clínica *<input id="presentationTime" type="time" required></label><label>Llegada al evento *<input id="arrivalTime" type="time" required></label><label>Inicio evento *<input id="eventStartTime" type="time" required></label><label>Término evento *<input id="eventEndTime" type="time" required></label><label>Regreso estimado clínica *<input id="returnTime" type="time" required></label>
+        </div><div class="duration-box">Duración total: <strong id="durationPreview">0 h 00 min</strong></div></div>
+        <div class="form-section"><div class="section-head"><h3>Equipo asistente</h3><button type="button" id="addMemberBtn" class="btn ghost">+ Integrante</button></div><div id="membersContainer"></div></div>
+        <div class="form-section"><div class="section-head"><h3>Móviles</h3><button type="button" id="addVehicleBtn" class="btn ghost">+ Móvil</button></div><div id="vehiclesContainer"></div></div>
+        <div class="form-section"><label>Observaciones administrativas<textarea id="eventNotes" maxlength="1000"></textarea></label></div>
+        <div id="validationSummary" class="alert error hidden"></div>
+        <div class="modal-actions"><button type="button" class="btn ghost close-modal">Cancelar</button><button class="btn primary" type="submit">Guardar evento</button></div>
+      </form>
+    </div>
+  </div>
+
+  <div id="detailModal" class="modal"><div class="modal-card large"><div class="modal-head"><h2>Ficha del evento</h2><button class="icon-btn close-detail">×</button></div><div id="detailContent"></div></div></div>
+  <div id="confirmModal" class="modal"><div class="modal-card small"><h2 id="confirmTitle">Confirmar</h2><p id="confirmText"></p><div class="modal-actions"><button id="confirmCancel" class="btn ghost">Cancelar</button><button id="confirmAccept" class="btn danger">Confirmar</button></div></div></div>
+
+  <script src="db.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
