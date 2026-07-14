@@ -1,3 +1,5 @@
+(()=>{
+'use strict';
 const { getAllEvents, saveEvent, deleteEventPermanently, replaceAllEvents } = window.RescueDB;
 
 const $ = (s, root=document) => root.querySelector(s);
@@ -79,3 +81,5 @@ function bind(){
 }
 
 document.addEventListener('DOMContentLoaded',async()=>{bind();await load();if(!state.user)$('#sessionModal').classList.add('open');else $('#sessionModal').classList.remove('open')});
+
+})();
