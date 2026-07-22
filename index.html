@@ -14,17 +14,37 @@
   <div id="toast" class="toast" aria-live="polite"></div>
 
   <div id="loginScreen" class="login-screen">
-    <form id="loginForm" class="login-card">
-      <div class="brand login-brand"><div class="brand-mark">RC</div><div><strong>Rescate CUA</strong><span>Gestión de eventos</span></div></div>
+    <div class="login-card">
+      <div class="brand login-brand">
+        <div class="brand-mark">RC</div>
+        <div><strong>Rescate CUA</strong><span>Gestión de eventos</span></div>
+      </div>
       <h1>Inicio de sesión</h1>
-      <p>Acceso autorizado para la gestión de coberturas y eventos.</p>
-      <label>Correo electrónico<input id="loginEmail" type="email" autocomplete="username" required></label>
-      <label>Contraseña<input id="loginPassword" type="password" autocomplete="current-password" required></label>
-      <label class="check-row"><input id="rememberSession" type="checkbox" checked> Recordar sesión en este dispositivo</label>
-      <div id="loginError" class="login-error hidden"></div>
-      <button class="btn primary full" type="submit">Ingresar</button>
-      <button id="forgotPasswordBtn" class="link-button" type="button">¿Olvidaste tu contraseña?</button>
-    </form>
+      <p>Acceso exclusivo para personal autorizado.</p>
+      <div id="loginError" class="login-error hidden" role="alert"></div>
+      <button id="googleLoginBtn" class="btn primary full google-login-btn" type="button">
+        <span class="google-icon" aria-hidden="true">G</span>
+        <span>Continuar con Google</span>
+      </button>
+      <p class="login-help">La primera vez, la cuenta quedará pendiente hasta que un administrador la autorice.</p>
+    </div>
+  </div>
+
+  <div id="pendingScreen" class="login-screen hidden">
+    <div class="login-card pending-card">
+      <div class="brand login-brand">
+        <div class="brand-mark">RC</div>
+        <div><strong>Rescate CUA</strong><span>Gestión de eventos</span></div>
+      </div>
+      <h1>Cuenta pendiente</h1>
+      <p>Tu cuenta fue registrada correctamente, pero todavía no tiene acceso a la aplicación.</p>
+      <div class="pending-user">
+        <strong id="pendingUserName">Usuario</strong>
+        <span id="pendingUserEmail"></span>
+      </div>
+      <p>Un administrador debe activar la cuenta y asignar el rol correspondiente.</p>
+      <button id="pendingLogoutBtn" class="btn ghost full" type="button">Cerrar sesión</button>
+    </div>
   </div>
 
   <div id="appShell" class="app-shell hidden">
@@ -82,7 +102,7 @@
         <article class="panel"><div id="reportPreview" class="report-preview empty">Selecciona filtros y genera una vista previa.</div></article>
       </section>
 
-      <section id="usersView" class="view"><article class="panel"><div class="panel-heading"><div><h3>Usuarios autorizados</h3><p>Las cuentas nuevas se crean gratuitamente desde Firebase Authentication. Aquí puedes cambiar nombre, rol o estado.</p></div></div><div class="table-scroll"><table><thead><tr><th>Nombre</th><th>Correo</th><th>Rol</th><th>Estado</th><th>Acción</th></tr></thead><tbody id="usersTable"></tbody></table></div></article></section>
+      <section id="usersView" class="view"><article class="panel"><div class="panel-heading"><div><h3>Usuarios autorizados</h3><p>Las cuentas nuevas aparecen automáticamente al ingresar con Google. Aquí puedes aprobarlas, cambiar su rol o desactivarlas.</p></div></div><div class="table-scroll"><table><thead><tr><th>Nombre</th><th>Correo</th><th>Rol</th><th>Estado</th><th>Acción</th></tr></thead><tbody id="usersTable"></tbody></table></div></article></section>
 
       <section id="trashView" class="view"><article class="panel table-panel"><div class="table-scroll"><table><thead><tr><th>Evento</th><th>Fecha</th><th>Eliminado</th><th>Usuario</th><th>Motivo</th><th>Acciones</th></tr></thead><tbody id="trashTable"></tbody></table></div></article></section>
     </main>

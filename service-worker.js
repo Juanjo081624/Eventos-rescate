@@ -1,4 +1,4 @@
-const CACHE_NAME = 'eventos-rescate-v2-1-auth-20260722';
+const CACHE_NAME = 'eventos-rescate-v2-2-google-20260722';
 const APP_SHELL = [
   './',
   './index.html',

@@ -1,7 +1,7 @@
 (function(){
 'use strict';
 const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
-const state={events:[],users:[],user:'',authUser:null,profile:null,role:'',view:'dashboard',dashDate:new Date(),calDate:new Date(),eventSubscriptionStarted:false,userUnsubscribe:null};
+const state={events:[],users:[],user:'',authUser:null,profile:null,role:'',view:'dashboard',dashDate:new Date(),calDate:new Date(),eventUnsubscribe:null,userUnsubscribe:null};
 const statusClass=s=>'status-'+s.toLowerCase().replaceAll(' ','-');
 const esc=v=>String(v??'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
 const fmtDate=d=>d?new Intl.DateTimeFormat('es-CL',{day:'2-digit',month:'2-digit',year:'numeric'}).format(new Date(d+'T12:00:00')):'';
@@ -19,8 +19,8 @@ function historyEntry(action,details=''){return{action,details,user:state.user,u
 function isAdmin(){return state.role==='admin'} function canEdit(){return state.role==='admin'||state.role==='user'} function isReadonly(){return state.role==='readonly'}
 
 function setup(){
-  $('#loginForm').addEventListener('submit',login);
-  $('#forgotPasswordBtn').onclick=forgotPassword;
+  $('#googleLoginBtn').onclick=loginWithGoogle;
+  $('#pendingLogoutBtn').onclick=()=>AuthStore.logout();
   $('#logoutBtn').onclick=()=>AuthStore.logout();
   $$('#mainNav button').forEach(b=>b.onclick=()=>setView(b.dataset.view));
   $('#newEventBtn').onclick=()=>{if(canEdit())openEventForm();else toast('Tu perfil es de solo lectura')};
@@ -36,27 +36,38 @@ function setup(){
   if('serviceWorker' in navigator) navigator.serviceWorker.register('./service-worker.js').catch(console.warn);
   AuthStore.watch(handleAuthState);
 }
-async function login(event){
-  event.preventDefault();
-  const email=$('#loginEmail').value.trim(),password=$('#loginPassword').value,remember=$('#rememberSession').checked;
-  const error=$('#loginError');error.classList.add('hidden');
-  try{await AuthStore.login(email,password,remember)}catch(e){error.textContent=e.userMessage||e.message;error.classList.remove('hidden')}
+async function loginWithGoogle(){
+  const button=$('#googleLoginBtn'),error=$('#loginError');
+  error.classList.add('hidden');error.textContent='';button.disabled=true;
+  button.innerHTML='<span class="google-icon" aria-hidden="true">G</span><span>Conectando…</span>';
+  try{await AuthStore.loginWithGoogle()}catch(e){console.error(e);error.textContent=e.userMessage||e.message||'No fue posible iniciar sesión con Google.';error.classList.remove('hidden')}
+  finally{button.disabled=false;button.innerHTML='<span class="google-icon" aria-hidden="true">G</span><span>Continuar con Google</span>'}
 }
-async function forgotPassword(){
-  const email=$('#loginEmail').value.trim();
-  try{await AuthStore.resetPassword(email);toast('Correo de recuperación enviado')}catch(e){const box=$('#loginError');box.textContent=e.message||'No fue posible enviar el correo';box.classList.remove('hidden')}
+function stopSubscriptions(){
+  if(typeof state.eventUnsubscribe==='function')state.eventUnsubscribe();
+  if(typeof state.userUnsubscribe==='function')state.userUnsubscribe();
+  state.eventUnsubscribe=null;state.userUnsubscribe=null;state.events=[];state.users=[];
+}
+function showScreen(name){
+  $('#loginScreen').classList.toggle('hidden',name!=='login');
+  $('#pendingScreen').classList.toggle('hidden',name!=='pending');
+  $('#appShell').classList.toggle('hidden',name!=='app');
 }
 function handleAuthState(user,profile,error){
-  if(!user){state.authUser=null;state.profile=null;state.role='';state.user='';$('#appShell').classList.add('hidden');$('#loginScreen').classList.remove('hidden');return}
-  if(error||!profile){AuthStore.logout();const box=$('#loginError');box.textContent='La cuenta existe, pero no tiene un perfil autorizado en Firestore.';box.classList.remove('hidden');return}
-  if(profile.active!==true){AuthStore.logout();const box=$('#loginError');box.textContent='Esta cuenta está desactivada. Contacta a un administrador.';box.classList.remove('hidden');return}
-  state.authUser=user;state.profile=profile;state.role=profile.role||'readonly';state.user=profile.fullName||user.email;
-  $('#activeUser').textContent=state.user;$('#activeRole').textContent=roleLabel(state.role);$('#loginScreen').classList.add('hidden');$('#appShell').classList.remove('hidden');applyPermissions();
-  if(!state.eventSubscriptionStarted){state.eventSubscriptionStarted=true;EventStore.subscribe(events=>{state.events=events;renderAll()},err=>{console.error(err);toast('No fue posible conectar con Firestore')})}
-  if(isAdmin()&&!state.userUnsubscribe){state.userUnsubscribe=UserStore.subscribe(users=>{state.users=users;renderUsers()},err=>console.error(err))}
+  if(!user){stopSubscriptions();state.authUser=null;state.profile=null;state.role='';state.user='';showScreen('login');return}
+  if(error||!profile){showScreen('login');const box=$('#loginError');box.textContent='No fue posible crear o cargar el perfil del usuario. Revisa las reglas de Firestore.';box.classList.remove('hidden');return}
+  if(profile.active!==true||profile.role==='pending'){
+    stopSubscriptions();state.authUser=user;state.profile=profile;state.role=profile.role||'pending';state.user=profile.fullName||user.displayName||user.email;
+    $('#pendingUserName').textContent=state.user||'Usuario';$('#pendingUserEmail').textContent=user.email||'';showScreen('pending');return;
+  }
+  state.authUser=user;state.profile=profile;state.role=profile.role||'readonly';state.user=profile.fullName||user.displayName||user.email;
+  $('#activeUser').textContent=state.user;$('#activeRole').textContent=roleLabel(state.role);showScreen('app');applyPermissions();
+  if(!state.eventUnsubscribe)state.eventUnsubscribe=EventStore.subscribe(events=>{state.events=events;renderAll()},err=>{console.error(err);toast('No fue posible conectar con Firestore')});
+  if(isAdmin()&&!state.userUnsubscribe)state.userUnsubscribe=UserStore.subscribe(users=>{state.users=users;renderUsers()},err=>console.error(err));
+  if(!isAdmin()&&state.userUnsubscribe){state.userUnsubscribe();state.userUnsubscribe=null;state.users=[]}
   setView('dashboard');
 }
-function roleLabel(role){return({admin:'Administrador',user:'Usuario',readonly:'Solo lectura'})[role]||role}
+function roleLabel(role){return({admin:'Administrador',user:'Usuario',readonly:'Solo lectura',pending:'Pendiente'})[role]||role}
 function applyPermissions(){
   $$('.admin-only').forEach(el=>el.classList.toggle('hidden',!isAdmin()));
   $('#newEventBtn').classList.toggle('hidden',!canEdit());
@@ -97,8 +108,8 @@ async function trashEvent(id){if(!canEdit()){toast('No tienes permisos para elim
 function renderTrash(){if(!isAdmin())return;const ev=deletedEvents();$('#trashTable').innerHTML=ev.length?ev.map(e=>`<tr><td>${esc(e.name)}</td><td>${fmtDate(e.startDate)}</td><td>${fmtDateTime(e.deletedAt)}</td><td>${esc(e.deletedBy||'')}</td><td>${esc(e.deletionReason||'')}</td><td><div class="actions"><button class="btn" data-restore="${e.id}">Restaurar</button><button class="btn danger" data-delete="${e.id}">Eliminar definitivamente</button></div></td></tr>`).join(''):'<tr><td colspan="6" class="empty">La papelera está vacía.</td></tr>';$$('[data-restore]').forEach(b=>b.onclick=()=>EventStore.restore(b.dataset.restore,state.user));$$('[data-delete]').forEach(b=>b.onclick=async()=>{if(confirm('Esta acción no se puede deshacer. ¿Eliminar definitivamente?'))await EventStore.remove(b.dataset.delete)})}
 function renderUsers(){
   const table=$('#usersTable');if(!table||!isAdmin())return;
-  table.innerHTML=state.users.length?state.users.map(u=>`<tr data-user-row="${u.uid}"><td><input class="user-name-input" value="${esc(u.fullName||'')}"></td><td>${esc(u.email||'')}</td><td><select class="user-role-select"><option value="admin">Administrador</option><option value="user">Usuario</option><option value="readonly">Solo lectura</option></select></td><td><label class="status-toggle"><input class="user-active" type="checkbox" ${u.active===true?'checked':''}> Activo</label></td><td><button class="btn user-save">Guardar</button></td></tr>`).join(''):'<tr><td colspan="5" class="empty">No hay perfiles registrados.</td></tr>';
-  $$('[data-user-row]').forEach(row=>{const u=state.users.find(x=>x.uid===row.dataset.userRow);row.querySelector('.user-role-select').value=u.role||'readonly';row.querySelector('.user-save').onclick=async()=>{if(u.uid===state.authUser.uid&&!row.querySelector('.user-active').checked){toast('No puedes desactivar tu propia cuenta');return}try{await UserStore.update(u.uid,{fullName:row.querySelector('.user-name-input').value,role:row.querySelector('.user-role-select').value,active:row.querySelector('.user-active').checked},state.user);toast('Usuario actualizado')}catch(e){console.error(e);toast('No fue posible actualizar el usuario')}}})
+  table.innerHTML=state.users.length?state.users.map(u=>`<tr data-user-row="${u.uid}"><td><input class="user-name-input" value="${esc(u.fullName||'')}"></td><td>${esc(u.email||'')}</td><td><select class="user-role-select"><option value="pending">Pendiente</option><option value="admin">Administrador</option><option value="user">Usuario</option><option value="readonly">Solo lectura</option></select></td><td><label class="status-toggle"><input class="user-active" type="checkbox" ${u.active===true?'checked':''}> Activo</label></td><td><button class="btn user-save">Guardar</button></td></tr>`).join(''):'<tr><td colspan="5" class="empty">No hay perfiles registrados.</td></tr>';
+  $$('[data-user-row]').forEach(row=>{const u=state.users.find(x=>x.uid===row.dataset.userRow);row.querySelector('.user-role-select').value=u.role||'pending';row.querySelector('.user-save').onclick=async()=>{if(u.uid===state.authUser.uid&&!row.querySelector('.user-active').checked){toast('No puedes desactivar tu propia cuenta');return}if(u.uid===state.authUser.uid&&row.querySelector('.user-role-select').value!=='admin'){toast('No puedes quitarte tu propio rol de administrador');return}try{await UserStore.update(u.uid,{fullName:row.querySelector('.user-name-input').value,role:row.querySelector('.user-role-select').value,active:row.querySelector('.user-active').checked},state.user);toast('Usuario actualizado')}catch(e){console.error(e);toast('No fue posible actualizar el usuario')}}})
 }
 
 function whatsappText(e){return`Cobertura de evento – Rescate CUA\n\nEvento: ${e.name}\nTipo: ${e.type==='Otro'?e.otherType:e.type}\nFecha: ${fmtDate(e.startDate)}${e.endDate!==e.startDate?' al '+fmtDate(e.endDate):''}\nLugar: ${e.location}\nPresentación en clínica: ${e.presentationTime} horas\nLlegada al evento: ${e.arrivalTime||'-'} horas\nInicio: ${e.eventStartTime||'-'} horas\nTérmino: ${e.eventEndTime||'-'} horas\nLlegada estimada a clínica: ${e.returnTime} horas\n\nEquipo asistente:\n${(e.team||[]).map(p=>`• ${p.role}: ${p.name}`).join('\n')||'• Sin equipo asignado'}\n\nMóvil: ${(e.vehicles||[]).map(v=>v.type==='Otro'?v.other:v.type).join(', ')||'Sin móvil'}\nEstado: ${e.status}`}

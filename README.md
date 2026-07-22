@@ -1,49 +1,43 @@
-# Gestión de Eventos Rescate CUA v2.1
+# Eventos Rescate CUA v2.2
 
-PWA colaborativa con Firestore y login mediante Firebase Authentication.
+PWA para gestión de eventos operativos, con Firestore compartido, acceso mediante Google y roles.
+
+## Publicación en GitHub Pages
+
+1. Sube todos los archivos de esta carpeta a la raíz del repositorio.
+2. Espera el despliegue de GitHub Pages.
+3. Borra el Service Worker/caché de la versión anterior o abre la página en una ventana privada.
+4. Inicia sesión con Google.
+
+## Primer administrador
+
+El primer acceso Google crea automáticamente `users/{UID}` con:
+
+- `role: pending`
+- `active: false`
+
+Desde Firebase Console abre ese documento y cambia:
+
+- `role` a `admin`
+- `active` a `true`
+
+Cierra sesión y vuelve a ingresar.
+
+## Reglas de Firestore
+
+Después de confirmar que el administrador puede entrar, copia el contenido de `firestore.rules` en:
+
+`Firebase > Firestore > Reglas`
+
+Luego pulsa **Publicar**.
 
 ## Roles
 
-- `admin`: acceso completo, usuarios, papelera e importación JSON.
-- `user`: crea, modifica y envía eventos a papelera.
-- `readonly`: consulta dashboard, calendario, eventos e informes.
+- `admin`: acceso completo, usuarios, papelera e importación.
+- `user`: crea y modifica eventos.
+- `readonly`: consulta sin modificar.
+- `pending`: cuenta registrada, pendiente de autorización.
 
-## Requisitos
+## Nota de seguridad
 
-1. Firebase Authentication con correo/contraseña habilitado.
-2. Cada cuenta debe tener un documento `users/{UID}` con:
-   - `fullName`
-   - `email`
-   - `role`: `admin`, `user` o `readonly`
-   - `active`: `true`
-3. Publicar las reglas de Firestore indicadas en este README después de subir la versión.
-
-## Reglas recomendadas
-
-```javascript
-rules_version = '2';
-service cloud.firestore {
-  match /databases/{database}/documents {
-    function signedIn() { return request.auth != null; }
-    function profile() {
-      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
-    }
-    function active() { return signedIn() && profile().active == true; }
-    function admin() { return active() && profile().role == 'admin'; }
-    function editor() { return active() && (profile().role == 'admin' || profile().role == 'user'); }
-
-    match /events/{eventId} {
-      allow read: if active();
-      allow create, update: if editor();
-      allow delete: if admin();
-    }
-    match /users/{userId} {
-      allow read: if active();
-      allow update: if admin();
-      allow create, delete: if false;
-    }
-  }
-}
-```
-
-Las cuentas nuevas se crean gratuitamente en Firebase Authentication y luego se agrega su perfil en `users/{UID}`.
+La configuración web de Firebase no es una contraseña secreta. La seguridad real depende de Authentication y las reglas de Firestore.
