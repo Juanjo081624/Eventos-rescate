@@ -1,14 +1,25 @@
 {
-  "name": "Gestión de Eventos Rescate CUA",
-  "short_name": "Eventos CUA",
-  "description": "Gestión offline de eventos operativos de Rescate CUA",
-  "start_url": "./index.html",
+  "name": "Gestión de Eventos Rescate CUA v2.0",
+  "short_name": "Eventos Rescate",
+  "description": "Gestión multidispositivo de eventos operativos con sincronización Firestore.",
+  "start_url": "./",
+  "scope": "./",
   "display": "standalone",
-  "background_color": "#f4f7fa",
-  "theme_color": "#0b4f8a",
+  "background_color": "#f4f7f9",
+  "theme_color": "#0b5a91",
   "lang": "es-CL",
   "icons": [
-    {"src":"icons/icon-192.svg","sizes":"192x192","type":"image/svg+xml","purpose":"any maskable"},
-    {"src":"icons/icon-512.svg","sizes":"512x512","type":"image/svg+xml","purpose":"any maskable"}
+    {
+      "src": "icons/icon-192.svg",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icons/icon-512.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
   ]
 }
