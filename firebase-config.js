@@ -2,7 +2,7 @@
   'use strict';
 
   const firebaseConfig = {
-    apiKey: 'AIzaSyBhVC3v8Q2RjFjtcO9oI5x-EQALwsZev-o',
+    apiKey: 'AIzaSyBhVC3v8Q2RjFjtCo9oI5x-EQALwsZev-o',
     authDomain: 'eventos-rescate.firebaseapp.com',
     projectId: 'eventos-rescate',
     storageBucket: 'eventos-rescate.firebasestorage.app',
