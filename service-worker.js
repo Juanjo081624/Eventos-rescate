@@ -1,4 +1,4 @@
-const CACHE_NAME = 'eventos-rescate-v2-firestore-20260722';
+const CACHE_NAME = 'eventos-rescate-v2-1-auth-20260722';
 const APP_SHELL = [
   './',
   './index.html',
@@ -6,6 +6,7 @@ const APP_SHELL = [
   './app.js',
   './db.js',
   './firebase-config.js',
+  './auth.js',
   './manifest.json',
   './icons/icon-192.svg',
   './icons/icon-512.svg'

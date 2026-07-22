@@ -1,33 +1,49 @@
-# Gestión de Eventos Rescate CUA v2.0
+# Gestión de Eventos Rescate CUA v2.1
 
-PWA multidispositivo para gestionar eventos operativos de la Unidad de Rescate de Clínica Universidad de los Andes.
+PWA colaborativa con Firestore y login mediante Firebase Authentication.
 
-## Cambios de la versión 2.0
+## Roles
 
-- Cloud Firestore como almacenamiento principal compartido.
-- Sincronización en tiempo real entre computadores y teléfonos.
-- Persistencia offline de Firestore y sincronización al recuperar conexión.
-- Importación de respaldos JSON de la versión local.
-- Dashboard, calendario, conflictos, informes, papelera, trazabilidad y exportaciones conservados.
+- `admin`: acceso completo, usuarios, papelera e importación JSON.
+- `user`: crea, modifica y envía eventos a papelera.
+- `readonly`: consulta dashboard, calendario, eventos e informes.
 
-## Publicación en GitHub Pages
+## Requisitos
 
-1. Sube todos los archivos a la raíz del repositorio.
-2. Activa Pages desde la rama `main` y la carpeta `/ (root)`.
-3. Limpia el Service Worker anterior después de publicar.
-4. Verifica las reglas de Firestore.
+1. Firebase Authentication con correo/contraseña habilitado.
+2. Cada cuenta debe tener un documento `users/{UID}` con:
+   - `fullName`
+   - `email`
+   - `role`: `admin`, `user` o `readonly`
+   - `active`: `true`
+3. Publicar las reglas de Firestore indicadas en este README después de subir la versión.
 
-## Reglas temporales para pruebas
+## Reglas recomendadas
 
-Las reglas actuales del proyecto permiten lectura y escritura hasta el 13 de agosto de 2026. Antes de esa fecha deben reemplazarse por reglas permanentes y, para uso institucional, autenticación.
+```javascript
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() { return request.auth != null; }
+    function profile() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+    function active() { return signedIn() && profile().active == true; }
+    function admin() { return active() && profile().role == 'admin'; }
+    function editor() { return active() && (profile().role == 'admin' || profile().role == 'user'); }
 
-## Migrar eventos locales
+    match /events/{eventId} {
+      allow read: if active();
+      allow create, update: if editor();
+      allow delete: if admin();
+    }
+    match /users/{userId} {
+      allow read: if active();
+      allow update: if admin();
+      allow create, delete: if false;
+    }
+  }
+}
+```
 
-1. En la versión local, exporta un respaldo JSON.
-2. Publica y abre la versión 2.0.
-3. Importa el respaldo desde Informes.
-4. Confirma que los eventos aparezcan en Firestore y en otro dispositivo.
-
-## Consideración de seguridad
-
-Esta versión no incluye autenticación. Mientras las reglas permitan acceso público, cualquier persona con acceso técnico al proyecto puede leer o modificar datos. No almacenar información clínica ni datos de pacientes.
+Las cuentas nuevas se crean gratuitamente en Firebase Authentication y luego se agrega su perfil en `users/{UID}`.

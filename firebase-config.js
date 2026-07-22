@@ -17,6 +17,7 @@
   if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
 
   window.firebaseDb = firebase.firestore();
+  window.firebaseAuth = firebase.auth();
 
   // Firestore conserva una copia local y sincroniza cuando vuelve internet.
   window.firebaseDb.enablePersistence({ synchronizeTabs: true }).catch(error => {
